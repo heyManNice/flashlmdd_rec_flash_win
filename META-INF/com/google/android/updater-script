@@ -1,0 +1,4 @@
+
+package_extract_dir("asset","/tmp/flash");
+set_metadata_recursive("/tmp/flash", "mode", 0755);
+run_program("/tmp/flash/bin/bash", "/tmp/flash/sh/main.sh");
