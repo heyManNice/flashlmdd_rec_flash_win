@@ -38,15 +38,25 @@ function get_part_value(){
 
 #获取磁盘最大终止位置
 function get_disk_max_size(){
-    local max_size_res=$(${PARTED} ${DISK_PATH} print | grep "Disk ${DISK_PATH}")
-    local max_size_arr=(${max_size_res})
-    echo ${max_size_arr[2]}
+    local grow_end=$(str2float $(get_part_value grow End))
+    local esp_end=$(str2float $(get_part_value esp End))
+    local userdata_end=$(str2float $(get_part_value userdata End))
+    local win_end=$(str2float $(get_part_value win End))
+
+    local end_sort_arr=($(my_sort "${grow_end} ${esp_end} ${userdata_end} ${win_end}"))
+    echo ${end_sort_arr[-1]}
 }
 
 #获取磁盘最小起始位置
 #取userdata的起始位置
 function get_disk_min_size(){
-    echo "$(get_part_value userdata Start )"
+    local grow_start=$(str2float $(get_part_value grow Start))
+    local esp_start=$(str2float $(get_part_value esp Start))
+    local userdata_start=$(str2float $(get_part_value userdata Start))
+    local win_start=$(str2float $(get_part_value win Start))
+    
+    local start_sort_arr=($(my_sort "${grow_start} ${esp_start} ${userdata_start} ${win_start}"))
+    echo ${start_sort_arr[0]}
 }
 
 function part_test(){
@@ -67,6 +77,10 @@ function part_check(){
     WIN_PART_NUM="$(get_part_value win Number )"
     ESP_PART_NUM="$(get_part_value esp Number )"
     GROW_PART_NUM="$(get_part_value grow Number )"
+
+    #测试分区是不是连续的
+    local nums_sort="$(my_sort " ${USERDATA_PART_NUM} ${ESP_PART_NUM} ${WIN_PART_NUM} ${GROW_PART_NUM}")"
+    [ "$(is_continuou "${nums_sort}")" = "0" ] && err_exit "其外的情况，分区不连续,取消刷机" 10
 
     if [ ${package_info[part]} -eq 1 ]
     then
@@ -103,9 +117,15 @@ function part_check(){
 #计算新分区信息
 function new_part_info(){
     #计算磁盘的初始位置和终止位置
-    DISK_MAX_SIZE="$(str2float $(get_disk_max_size))"
-    DISK_MIN_SIZE="$(str2float $(get_disk_min_size))"
+    DISK_MAX_SIZE="$(get_disk_max_size)"
+    DISK_MIN_SIZE="$(get_disk_min_size)"
+
     DISK_TOTAL_SIZE=$(calc "${DISK_MAX_SIZE} - ${DISK_MIN_SIZE}")
+
+    if [ $(calc "${DISK_TOTAL_SIZE} < 100") = 1 ]
+    then
+        err_exit "可调整分区小于100GB，请检查是否有异常分区，取消刷机" 10
+    fi
 
     #分区的userdata信息
     USERDATA_START=$DISK_MIN_SIZE
@@ -165,58 +185,44 @@ function new_part_info(){
     done
 }
 
+#删除分区
+#参数1 要删除的分区的号码
+function del_part(){
+    if [ -n "${1}" ]
+    then
+        ui_print "删除${1}分区..."
+        ${BASE_PATH_BIN}/parted ${DISK_PATH} rm ${1}
+        [ $? -eq 0 ] || err_exit "删除${1}分区遇到错误，取消刷机" 10
+    fi
+}
+
+#新建分区
+#参数1 新建分区的名字
+#参数2 新建分区的格式
+#参数3 新建分区的起始
+#参数4 新建分区的结束
+function new_part(){
+    ui_print "建立${1}分区..."
+    ${BASE_PATH_BIN}/parted ${DISK_PATH} mkpart $1 $2 ${3}GB ${4}GB
+    [ $? -eq 0 ] || err_exit "建立${1}分区遇到错误，取消刷机" 10
+}
+
 #开始分区 
 function part_start(){
     ui_print "开始分区，请勿关闭设备或者断开u盘连接，否则设备会损坏"
     sleep 5s
     #删除分区
-    #grow分区
-    if [ -n "${GROW_PART_NUM}" ]
-    then
-        ui_print "删除grow分区..."
-        ${BASE_PATH_BIN}/parted ${DISK_PATH} rm ${GROW_PART_NUM}
-        [ $? -eq 0 ] || err_exit "删除grow分区遇到错误，取消刷机" 10
-    fi
 
-    #win分区
-    if [ -n "${WIN_PART_NUM}" ]
-    then
-        ui_print "删除win分区..."
-        ${BASE_PATH_BIN}/parted ${DISK_PATH} rm ${WIN_PART_NUM}
-        [ $? -eq 0 ] || err_exit "删除win分区遇到错误，取消刷机" 10
-    fi
-    #esp分区
-    if [ -n "${ESP_PART_NUM}" ]
-    then
-        ui_print "删除esp分区..."
-        ${BASE_PATH_BIN}/parted ${DISK_PATH} rm ${ESP_PART_NUM}
-        [ $? -eq 0 ] || err_exit "删除esp分区遇到错误，取消刷机" 10
-    fi
-    #userdata分区
-    if [ -n "${USERDATA_PART_NUM}" ]
-    then
-        check_umount "/data"
-        ui_print "删除userdata分区..."
-        ${BASE_PATH_BIN}/parted ${DISK_PATH} rm ${USERDATA_PART_NUM}
-        [ $? -eq 0 ] || err_exit "删除userdata分区遇到错误，取消刷机" 10
-    fi
-
+    check_umount "/data"
+    del_part "${GROW_PART_NUM}"
+    del_part "${WIN_PART_NUM}"
+    del_part "${ESP_PART_NUM}"
+    del_part "${USERDATA_PART_NUM}"
 
     #建立分区
-    #userdata
-    ui_print "建立userdata分区..."
-    ${BASE_PATH_BIN}/parted ${DISK_PATH} mkpart userdata ext4 ${USERDATA_START}GB ${USERDATA_END}GB
-    [ $? -eq 0 ] || err_exit "建立userdata分区遇到错误，取消刷机" 10
-
-    #esp
-    ui_print "建立esp分区..."
-    ${BASE_PATH_BIN}/parted ${DISK_PATH} mkpart esp fat32 ${ESP_START}GB ${ESP_END}GB
-    [ $? -eq 0 ] || err_exit "建立esp分区遇到错误，取消刷机" 10
-
-    #win
-    ui_print "建立win分区..."
-    ${BASE_PATH_BIN}/parted ${DISK_PATH} mkpart win ntfs ${WIN_START}GB ${WIN_END}GB
-    [ $? -eq 0 ] || err_exit "建立win分区遇到错误，取消刷机" 10
+    new_part userdata ext4 ${USERDATA_START} ${USERDATA_END}
+    new_part esp fat32 ${ESP_START} ${ESP_END}
+    new_part win ntfs ${WIN_START} ${WIN_END}
 }
 
 #程序流程开始
@@ -228,6 +234,7 @@ then
     #如果不分区，就不执行以下内容
     return
 fi
+
 new_part_info
 part_start
 #part_test

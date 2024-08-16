@@ -89,11 +89,12 @@ function ui_clear(){
     done
 }
 
-#排序
-
+#升序排序
+#参数1 需要排的字符串，空格间隔
 function my_sort(){
-    echo $(${BUSYBOX} echo "2 3 1 0" | ${BUSYBOX} tr " " "\n" | ${BUSYBOX} sort -n)
+    echo $(${BUSYBOX} echo "${1}" | ${BUSYBOX} tr " " "\n" | ${BUSYBOX} sort -n)
 }
+
 
 #显示错误信息并且退出
 #参数1 报错信息
@@ -130,6 +131,15 @@ function check_umount(){
 #参数1 算数字符串
 function calc(){
     echo $(${BUSYBOX} echo "${1}" | ${BUSYBOX} bc)
+}
+
+
+#判断这些整数是否是连续的
+#参数1 数字组成的字符串
+function is_continuou(){
+    local num_arr=(${1})
+    local index=$(calc "${#num_arr[@]} - 1")
+    echo $(calc "${num_arr[${index}]} - ${num_arr[0]} == ${index}")
 }
 
 declare -A  package_info
