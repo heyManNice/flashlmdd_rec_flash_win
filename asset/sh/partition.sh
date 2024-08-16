@@ -223,6 +223,7 @@ function part_start(){
     new_part userdata ext4 ${USERDATA_START} ${USERDATA_END}
     new_part esp fat32 ${ESP_START} ${ESP_END}
     new_part win ntfs ${WIN_START} ${WIN_END}
+    ui_print "分区完成，请手动滚动到屏幕下方..."
 }
 
 #程序流程开始
