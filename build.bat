@@ -18,8 +18,10 @@ IF "%1"=="dev" (
     echo =================================================================
     copy build_info.cfg .\asset\sh\build_info.sh
     echo BUILD_DATE="%date% %time%">>.\asset\sh\build_info.sh
+    .\build_tool\dos2unix.exe .\asset\sh\*
     .\build_tool\7z.exe a -tzip -bb3 .\build\test.zip asset META-INF
     .\build_tool\adb.exe push .\build\test.zip /tmp
+    
     echo.
     echo ==.\build\test.zip===============================================Build OK
     exit
@@ -29,6 +31,7 @@ IF "%1"=="release" (
     echo =================================================================
     copy build_info.cfg .\asset\sh\build_info.sh
     echo BUILD_DATE="%date% %time%">>.\asset\sh\build_info.sh
+    .\build_tool\dos2unix.exe .\asset\sh\*
     .\build_tool\7z.exe a -tzip -bb3 .\package_example\install.zip asset META-INF
     echo.
     echo ==.\package_example\install.zip==================================Build OK
