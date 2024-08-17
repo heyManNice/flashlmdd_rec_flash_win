@@ -66,7 +66,7 @@ function err_exit(){
     ui_print "$(cat /tmp/recovery.log | tail -n 5)"
     ui_print " "
     ui_print "XXXX========================"
-    ui_print "[错误]${1}";
+    ui_print "[错误/ERROR]${1}";
     ui_print " "
     exit $2;
 }
