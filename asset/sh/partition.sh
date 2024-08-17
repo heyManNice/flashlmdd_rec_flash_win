@@ -80,37 +80,37 @@ function part_check(){
 
     #测试分区是不是连续的
     local nums_sort="$(my_sort " ${USERDATA_PART_NUM} ${ESP_PART_NUM} ${WIN_PART_NUM} ${GROW_PART_NUM}")"
-    [ "$(is_continuou "${nums_sort}")" = "0" ] && err_exit "其外的情况，分区不连续,取消刷机" 10
+    [ "$(is_continuou "${nums_sort}")" = "0" ] && err_exit "${STR_RES[unexpected_situation]},${STR_RES[partition_discontinuity]},${STR_RES[cancel_flashing]}" 10
 
     if [ ${package_info[part]} -eq 1 ]
     then
-        local part_extra_msg="，即将删除"
+        local part_extra_msg=",${STR_RES[about_to_delete]}"
     else
-        local part_extra_msg="，保持不变"
+        local part_extra_msg=",${STR_RES[remain_unchanged]}"
     fi
 
     #打印现有分区信息
     #userdata分区
     if [ -n "${USERDATA_PART_NUM}" ]
     then
-        ui_print "检测到userdata分区，大小为$(get_part_value userdata Size )${part_extra_msg}"
+        ui_print "${STR_RES[detected]}userdata${STR_RES[partition]},${STR_RES[size_is]}$(get_part_value userdata Size )${part_extra_msg}"
     else
-        err_exit "意外的情况 找不到userdata分区，取消刷机" 10
+        err_exit "${STR_RES[unexpected_situation]} ${STR_RES[cant_found]}userdata${STR_RES[partition]},${STR_RES[cancel_flashing]}" 10
     fi
     #win分区
     if [ -n "${WIN_PART_NUM}" ]
     then
-        ui_print "检测到win分区，大小为$(get_part_value win Size )${part_extra_msg}"
+        ui_print "${STR_RES[detected]}win${STR_RES[partition]},${STR_RES[size_is]}$(get_part_value win Size )${part_extra_msg}"
     fi
     #esp分区
     if [ -n "${ESP_PART_NUM}" ]
     then
-        ui_print "检测到esp分区，大小为$(get_part_value esp Size )${part_extra_msg}"
+        ui_print "${STR_RES[detected]}esp${STR_RES[partition]},${STR_RES[size_is]}$(get_part_value esp Size )${part_extra_msg}"
     fi
     #grow分区
     if [ -n "${GROW_PART_NUM}" ]
     then
-        ui_print "检测到grow分区，大小为$(get_part_value grow Size )${part_extra_msg}"
+        ui_print "${STR_RES[detected]}grow${STR_RES[partition]},${STR_RES[size_is]}$(get_part_value grow Size )${part_extra_msg}"
     fi
 }
 
@@ -124,7 +124,7 @@ function new_part_info(){
 
     if [ $(calc "${DISK_TOTAL_SIZE} < 100") = 1 ]
     then
-        err_exit "可调整分区小于100GB，请检查是否有异常分区，取消刷机" 10
+        err_exit "${STR_RES[msg_adjustable_partitions_less_than_100]}" 10
     fi
 
     #分区的userdata信息
@@ -142,20 +142,20 @@ function new_part_info(){
     WIN_END=$DISK_MAX_SIZE
     WIN_SIZE=$(calc "${WIN_END} - ${WIN_START}")
 
-    ui_print "磁盘最小起始位置为${DISK_MIN_SIZE}GB，最大终止位置为${DISK_MAX_SIZE}GB"
-    ui_print "磁盘可调整空间为${DISK_TOTAL_SIZE}GB"
+    ui_print "${STR_RES[min_starting_position_of_disk_is]}${DISK_MIN_SIZE}GB,${STR_RES[max_ending_position_of_disk_is]}${DISK_MAX_SIZE}GB"
+    ui_print "${STR_RES[the_adjustable_disk_space_is]}${DISK_TOTAL_SIZE}GB"
 
     #android和win的空间大小占比
     ANDROID_USAGE=$(calc "${package_info[android]} * 100" )
     WINDOWS_USAGE=$(calc "100 - ${ANDROID_USAGE}" )
-    ui_print "安卓设置为总分区的${ANDROID_USAGE}%,视窗为${WINDOWS_USAGE}%"
+    ui_print "${STR_RES[android_is_set_as_a_total_partition_of]}${ANDROID_USAGE}%,${STR_RES[windows_is_set_as_a_total_partition_of]}${WINDOWS_USAGE}%"
     print_hr
-    ui_print "以下是分区调整方案："
-    ui_print "1、userdata起始为${USERDATA_START},终止为${USERDATA_END}。 共${USERDATA_SIZE}GB"
-    ui_print "2、esp起始为${ESP_START},终止为${ESP_END}。 共0${ESP_SIZE}GB"
-    ui_print "3、win起始为${WIN_START},终止为${WIN_END}。 共${WIN_SIZE}GB"
-    ui_print "!!请确定当前方案无误，20秒后开始分区"
-    ui_print "!!要取消请按音量-或电源键，或强制重启"
+    ui_print "${STR_RES[msg_following_is_plan]}"
+    ui_print "1、userdata${STR_RES[starting_is]}${USERDATA_START},${STR_RES[ending_is]}${USERDATA_END}。 ${STR_RES[total]}${USERDATA_SIZE}GB"
+    ui_print "2、esp${STR_RES[starting_is]}${ESP_START},${STR_RES[ending_is]}${ESP_END}。 ${STR_RES[total]}0${ESP_SIZE}GB"
+    ui_print "3、win${STR_RES[starting_is]}${WIN_START},${STR_RES[ending_is]}${WIN_END}。 ${STR_RES[total]}${WIN_SIZE}GB"
+    ui_print "!!${STR_RES[confirm_it_20_sec]}"
+    ui_print "!!${STR_RES[to_cancel_volume_or_power_or_reboot]}"
     print_hr
 
     local timer
@@ -170,15 +170,15 @@ function new_part_info(){
     do
         if [ "${i}" = "10" ]
         then
-            ui_print "!!请确定当前方案无误，10秒后开始分区"
-            ui_print "!!要取消请按音量-或电源键，或强制重启"
+            ui_print "!!${STR_RES[confirm_it_10_sec]}"
+            ui_print "!!${STR_RES[to_cancel_volume_or_power_or_reboot]}"
             print_hr
         fi
 
         local key_event=$(${BUSYBOX} timeout 1 ${BUSYBOX} cat /dev/input/event0)
         if [ "${key_event}" != "" ]
         then
-            ui_print "= 用户取消了刷机"
+            ui_print "= ${STR_RES[user_cancel_flashing]}"
             print_hr
             exit 0
         fi
@@ -190,9 +190,9 @@ function new_part_info(){
 function del_part(){
     if [ -n "${1}" ]
     then
-        ui_print "删除${1}分区..."
+        ui_print "${STR_RES[delete]}${1}${STR_RES[partition]}..."
         ${BASE_PATH_BIN}/parted ${DISK_PATH} rm ${1}
-        [ $? -eq 0 ] || err_exit "删除${1}分区遇到错误，取消刷机" 10
+        [ $? -eq 0 ] || err_exit "${STR_RES[delete]}${1}${STR_RES[partition]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
     fi
 }
 
@@ -202,14 +202,14 @@ function del_part(){
 #参数3 新建分区的起始
 #参数4 新建分区的结束
 function new_part(){
-    ui_print "建立${1}分区..."
+    ui_print "${STR_RES[create]}${1}${STR_RES[partition]}..."
     ${BASE_PATH_BIN}/parted ${DISK_PATH} mkpart $1 $2 ${3}GB ${4}GB
-    [ $? -eq 0 ] || err_exit "建立${1}分区遇到错误，取消刷机" 10
+    [ $? -eq 0 ] || err_exit "${STR_RES[create]}${1}${STR_RES[partition]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
 }
 
 #开始分区 
 function part_start(){
-    ui_print "开始分区，请勿关闭设备或者断开u盘连接，否则设备会损坏"
+    ui_print "${STR_RES[start_partition_do_not_power_off]}"
     sleep 5s
     #删除分区
 
@@ -223,7 +223,7 @@ function part_start(){
     new_part userdata ext4 ${USERDATA_START} ${USERDATA_END}
     new_part esp fat32 ${ESP_START} ${ESP_END}
     new_part win ntfs ${WIN_START} ${WIN_END}
-    ui_print "分区完成，请手动滚动到屏幕下方..."
+    ui_print "${STR_RES[msg_partition_completed]}..."
 }
 
 #程序流程开始

@@ -1,5 +1,6 @@
 #!/tmp/flash/bin/bash
 
+TWRP_CONFIG_PATH="/data/media/0/TWRP/.twrps"
 
 #获取OUTFD的代码来自Magisk
 #https://github.com/topjohnwu/Magisk
@@ -70,8 +71,26 @@ function err_exit(){
     exit $2;
 }
 
+#从twrp配置中获取语言
+function load_languages(){
+    local lang_arr=($(${BUSYBOX} ls ${BASE_PATH_LANG} | ${BUSYBOX} awk -F. '{print $1}'))
+    local LOACL
+    for lang in ${lang_arr[@]}
+    do
+        ${BUSYBOX} cat ${TWRP_CONFIG_PATH} | ${BUSYBOX} grep -q "${lang}" && LOACL=${lang}
+    done
+    
+    #加载该语言
+    source "${BASE_PATH_LANG}/${LOACL}.sh"
+
+    #如果找不到语言，那就加载英文
+    [ -n "${LOACL}" ] || source "${BASE_PATH_LANG}/en.sh"
+
+}
+
 get_outfd
+load_languages
 
 
-[ -r ${BASE_PATH_SH}/build_info.sh ] || err_exit "找不到${BASE_PATH_SH}/build_info.sh,取消刷机" 10
+[ -r ${BASE_PATH_SH}/build_info.sh ] || err_exit "${STR_RES[cant_found]}${BASE_PATH_SH}/build_info.sh,${STR_RES[cancel_flashing]}" 10
 source ${BASE_PATH_SH}/build_info.sh
