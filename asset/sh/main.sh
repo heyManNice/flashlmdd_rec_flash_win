@@ -1,5 +1,8 @@
 #!/tmp/flash/bin/bash
 
+[ -r ${BASE_PATH_SH}/build_info.sh ] || err_exit "找不到文件${BASE_PATH_SH}/build_info.sh" 10
+source ${BASE_PATH_SH}/build_info.sh
+
 DEBUG=0
 
 BASE_PATH="/tmp/flash"
@@ -9,7 +12,7 @@ TOOLBOX="${BASE_PATH_BIN}/toolbox"
 BUSYBOX="${BASE_PATH_BIN}/busybox"
 
 USB_OTG="/usb-otg"
-IMAGES_PATH="${USB_OTG}/flashlmdd_rec_flash_win"
+IMAGES_PATH="${USB_OTG}/${package_info[device]}_rec_flash_win"
 SOURCES="${IMAGES_PATH}/sources"
 
 asset_path=(
@@ -75,7 +78,6 @@ function print_hr(){
 
 #打印编译信息
 function get_build_info(){
-    source ${BASE_PATH_SH}/build_info.sh
     ui_print "编译日期：${BUILD_DATE}"
 }
 
