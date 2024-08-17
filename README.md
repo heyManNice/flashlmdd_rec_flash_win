@@ -3,6 +3,7 @@ LGv50刷windows双系统的卡刷包脚本代码，可以自定义配置安卓�
 
 其他机型仓库：  
 - [flashlmdd(lgv50)](https://github.com/heyManNice/flashlmdd_rec_flash_win)  
+- [mh2lm5g(lgv50s)](https://github.com/heyManNice/mh2lm5g_rec_flash_win)  
   
 为了降低测试成本，脚本应当专机专用  
 适配新机型请建立新的Fork  
@@ -20,13 +21,13 @@ LGv50刷windows双系统的卡刷包脚本代码，可以自定义配置安卓�
 - 软件：flashlmdd_rec_flash_win压缩包
 - 手机状态：可以进入第三方rec
 ### 操作
-- 格式化U盘：把U盘格式化为exFAT格式，如果已经是这个格式的话可以不用操作
+- 格式化U盘(SD卡)：把U盘(或者SD卡)格式化为exFAT格式，如果已经是这个格式的话可以不用操作
 - 复制刷机包：把刷机包中解压出来的的flashlmdd_rec_flash_win文件夹直接放在U盘的根目录
 - 配置刷机包：打开flashlmdd_rec_flash_win文件夹,会看到package.info，用记事本打开它
 	          里面可以设置是否要分区和安卓与windows的分区大小
 	          手机如果是第一次安装windows的话，分区功能必须要打开
 - 安装twrp(可选)：推荐使用的rec为v50-twrp-installer-v3.6.0-flashlmdd_ab-by_youngguo(已放入压缩包中)，它是开发过程中测试的环境，兼容性比较好
-- 连接U盘：在twrp中把U盘插入手机，用挂载功能把外置U盘挂载上
+- 连接U盘(SD卡)：在twrp中把U盘(SD卡)插入手机，用挂载功能把外置U盘挂载上
 - 安装Windows：找到/usb-otg/flashlmdd_rec_flash_win/install.zip
 	 	像平常刷机一样把它给刷上就好了
 ## 至开发者
