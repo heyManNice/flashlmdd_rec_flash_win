@@ -1,8 +1,5 @@
 #!/tmp/flash/bin/bash
 
-[ -r ${BASE_PATH_SH}/build_info.sh ] || err_exit "找不到文件${BASE_PATH_SH}/build_info.sh" 10
-source ${BASE_PATH_SH}/build_info.sh
-
 DEBUG=0
 
 BASE_PATH="/tmp/flash"
@@ -11,9 +8,27 @@ BASE_PATH_SH="${BASE_PATH}/sh"
 TOOLBOX="${BASE_PATH_BIN}/toolbox"
 BUSYBOX="${BASE_PATH_BIN}/busybox"
 
-USB_OTG="/usb-otg"
-IMAGES_PATH="${USB_OTG}/${package_info[device]}_rec_flash_win"
+declare -A  package_info
+source ${BASE_PATH_SH}/init.sh
+
+
+external_storage_list=(
+    "/usb-otg"
+    "/external_sd"
+)
+
+#检测挂载的外置储存
+for storage_path in ${external_storage_list[@]}
+do
+    [ -n "$(is_mount "${storage_path}")" ] && MY_EXTERNAL_STORAGE=${storage_path}
+done
+[ -n "${MY_EXTERNAL_STORAGE}" ] || err_exit "找不到挂载的外置储存" 10
+
+
+
+IMAGES_PATH="${MY_EXTERNAL_STORAGE}/${BUILD_DEVICE}_rec_flash_win"
 SOURCES="${IMAGES_PATH}/sources"
+
 
 asset_path=(
     "bin/bash"
@@ -33,37 +48,6 @@ asset_path=(
     "BCD"
 )
 
-#获取OUTFD的代码来自Magisk
-#https://github.com/topjohnwu/Magisk
-function get_outfd(){
-    # update-binary|updater <RECOVERY_API_VERSION> <OUTFD> <ZIPFILE>
-    OUTFD=$(ps | grep -v 'grep' | grep -oE 'update(.*) 3 [0-9]+' | cut -d" " -f3)
-    [ -z $OUTFD ] && OUTFD=$(ps -Af | grep -v 'grep' | grep -oE 'update(.*) 3 [0-9]+' | cut -d" " -f3)
-    # update_engine_sideload --payload=file://<ZIPFILE> --offset=<OFFSET> --headers=<HEADERS> --status_fd=<OUTFD>
-    [ -z $OUTFD ] && OUTFD=$(ps | grep -v 'grep' | grep -oE 'status_fd=[0-9]+' | cut -d= -f2)
-    [ -z $OUTFD ] && OUTFD=$(ps -Af | grep -v 'grep' | grep -oE 'status_fd=[0-9]+' | cut -d= -f2)
-}
-
-#打印信息到rec的屏幕上
-function ui_print(){
-    if [ $OUTFD ]
-    then
-        echo -e "ui_print $1" >> /proc/self/fd/$OUTFD
-    else
-        echo -e $1
-    fi
-}
-
-#显示进度条
-#参数1 进度条前进的值，总值为1
-#参数2 前进所化的时间，单位秒
-function show_progress(){
-    if [ $OUTFD ]
-    then
-        echo -e "progress $1 $2" >> /proc/self/fd/$OUTFD
-    fi
-}
-
 #将文档中的\r\n换成\n
 #让linux能够正常的读取由win编辑的文档
 function win2unix(){
@@ -71,24 +55,10 @@ function win2unix(){
     [ -r ${IMAGES_PATH}/package.info ] && ${BASE_PATH_BIN}/dos2unix ${IMAGES_PATH}/package.info
 }
 
-#打印横线
-function print_hr(){
-    ui_print "============================================"
-}
 
 #打印编译信息
 function get_build_info(){
     ui_print "编译日期：${BUILD_DATE}"
-}
-
-
-#清除rec屏幕上的内容
-#打印大量的空白字符实现
-function ui_clear(){
-    for i in $(${BUSYBOX} seq 1 30)
-    do
-        ui_print " "
-    done
 }
 
 #升序排序
@@ -98,23 +68,7 @@ function my_sort(){
 }
 
 
-#显示错误信息并且退出
-#参数1 报错信息
-#参数2 退出返回的值
-function err_exit(){
-    ui_clear
-    ui_print "XXXX========================"
-    ui_print "[错误]${1}";
-    ui_print " "
-    exit $2;
-}
 
-
-#检测是否挂载分区
-#参数1 分区路径
-function is_mount(){
-    echo $(${BUSYBOX} mount | grep ${1})
-}
 
 #检测如果挂载了分区就取消挂载分区
 #参数1 要检测的目录
@@ -144,7 +98,6 @@ function is_continuou(){
     echo $(calc "${num_arr[${index}]} - ${num_arr[0]} == ${index}")
 }
 
-declare -A  package_info
 #打印刷机信息
 function print_info(){
 
@@ -173,6 +126,7 @@ function print_info(){
     print_hr
     ui_print "= 机型：${package_info[device]}"
     ui_print "= 目标系统：${package_info[target]}"
+    ui_print "= 外置存储：${MY_EXTERNAL_STORAGE}"
     ui_print "= 系统简介：${package_info[brief]}"
 
     if [ ${package_info[part]} -eq 1 ]
@@ -264,7 +218,7 @@ function wait2flash(){
 #main函数
 #模仿其他编程语言假装是程序的主入口
 function main(){
-    get_outfd
+    
     win2unix
     get_build_info
     env_check
