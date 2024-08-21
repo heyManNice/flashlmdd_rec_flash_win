@@ -5,8 +5,8 @@ WIN_PART_NUM="$(get_part_value win Number )"
 ESP_PART_NUM="$(get_part_value esp Number )"
 
 
-[ -n "${WIN_PART_NUM}" ] || err_exit "win${STR_RES[partition]}${STR_RES[cant_found]},${STR_RES[cancel_flashing]}" 10
-[ -n "${ESP_PART_NUM}" ] || err_exit "esp${STR_RES[partition]}${STR_RES[cant_found]},${STR_RES[cancel_flashing]}" 10
+[ -n "${WIN_PART_NUM}" ] || err_exitf str_cant_found_partition win
+[ -n "${ESP_PART_NUM}" ] || err_exitf str_cant_found_partition esp
 
 WIN_PATH="${DISK_PATH}${WIN_PART_NUM}"
 WIN_MOUNT="/mnt/win"
@@ -27,43 +27,52 @@ function err_exit_umount(){
     err_exit $1 $2
 }
 
+#显示格式化错误并且取消分区挂载
+#报错显示的内容
+#报错返回代码
+function err_exit_umountf(){
+    check_umount $WIN_MOUNT
+    check_umount $ESP_MOUNT
+    err_exitf $@
+}
+
 #挂载分区
 function mount_part(){
-    ui_print "${STR_RES[msg_fix_ntfs_file_system]}..."
+    prints str_msg_fix_file_system ntfs
     ${BASE_PATH_BIN}/ntfsfix ${WIN_PATH}
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[msg_fix_ntfs_file_system]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_msg_fix_file_system_failed ntfs
 
-    ui_print "${STR_RES[mount_win_esp]}..."
+    prints str_mount_partition "win,esp"
     ${BUSYBOX} mkdir -p ${WIN_MOUNT} ${ESP_MOUNT}
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[creating_partition_folder_failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_creating_partition_folder_failed "win,esp"
     ${BUSYBOX} mount -t ntfs ${WIN_PATH} ${WIN_MOUNT} 
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[mount_win]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_mount_partition_failed win
     ${BUSYBOX} mount -t vfat ${ESP_PATH} ${ESP_MOUNT}
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[mount_esp]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_mount_partition_failed esp
 }
 
 #安装efi
 function install_efi(){
-    ui_print "${STR_RES[create_win_system_bootleader]}..."
+    prints str_create_uefi_bootleader
     ${BUSYBOX} mkdir -p ${ESP_MOUNT}/EFI/{Boot,Microsoft/Boot}
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[create]}EFI${STR_RES[folder]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_creating_partition_folder_failed EFI
     ${BUSYBOX} cp -r ${WIN_MOUNT}/Windows/Boot/EFI/* ${ESP_MOUNT}/EFI/Microsoft/Boot
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[copying]}EFI${STR_RES[folder]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_copying_files_failed EFI
     ${BUSYBOX} cp ${ESP_MOUNT}/EFI/Microsoft/Boot/bootmgfw.efi ${ESP_MOUNT}/EFI/Boot/bootaa64.efi
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[copying]}EFI${STR_RES[file]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_copying_files_failed "bootaa64.efi"
     ${BUSYBOX} cp ${BASE_PATH}/BCD ${ESP_MOUNT}/EFI/Microsoft/Boot/
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[copying]}BCD${STR_RES[file]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_copying_files_failed BCD
     ${BASE_PATH_BIN}/bcdboot ${ESP_MOUNT}/EFI/Microsoft/Boot/BCD ${WIN_PATH}
-    [ $? -eq 0 ] || err_exit_umount "${STR_RES[fix]}BCD${STR_RES[file]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exit_umountf str_fix_files_failed BCD
 }
 
 #安装boot
 function install_boot(){
     local using_boot="/dev/block/by-name/boot$(${TOOLBOX} getprop ro.boot.slot_suffix)"
-    ui_print "${STR_RES[install]}uefi boot..."
-    [ -r ${SOURCES}/uefi.img ] || err_exit "${STR_RES[cant_found_file]}${SOURCES}/uefi.img" 404
+    prints str_installing_boot
+    [ -r ${SOURCES}/uefi.img ] || err_exitf str_cant_found_file "${SOURCES}/uefi.img"
     ${BUSYBOX} dd if=${SOURCES}/uefi.img of=${using_boot} bs=32M
-    [ $? -eq 0 ] || err_exit "${STR_RES[install]}uefi boot${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exitf str_installing_boot_failed
 
 }
 

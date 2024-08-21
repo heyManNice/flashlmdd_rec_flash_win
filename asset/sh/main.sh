@@ -27,7 +27,7 @@ for storage_path in "${external_storage_list[@]}"
 do
     [ -n "$(is_mount "${storage_path}")" ] && MY_EXTERNAL_STORAGE=${storage_path}
 done
-[ -n "${MY_EXTERNAL_STORAGE}" ] || err_exit "${STR_RES[cant_found_storage]}" 10
+[ -n "${MY_EXTERNAL_STORAGE}" ] || err_exitf str_cant_found_storage
 
 
 
@@ -64,7 +64,7 @@ function win2unix(){
 
 #打印编译信息
 function get_build_info(){
-    ui_print "${STR_RES[build_date]}:${BUILD_DATE}"
+    prints str_build_data "$BUILD_DATE"
 }
 
 #升序排序
@@ -81,10 +81,10 @@ function my_sort(){
 function check_umount(){
     if [ -n "$(is_mount ${1})" ]
     then
-        ui_print "${1}${STR_RES[mounted_about_to_remounted]}"
+        prints str_mounted_about_to_remounted "$1"
         ${BUSYBOX} umount ${1}
     else
-        ui_print "${1}${STR_RES[unmounted]}"
+        prints str_unmounted "$1"
     fi
 }
 
@@ -118,10 +118,10 @@ function print_info(){
             #这个刷机包适配的机型/This flashing package is compatible with different models
             [device]="flashlmdd"
             #刷机包简介/Introduction to flashing package
-            [brief]="${script_testing}"
+            [brief]="test"
             #是否启用分区功能/Whether to enable partition function
             #1是启用，0是禁用/1 is enabled, 0 is disabled
-            [part]=1
+            [part]=0
             #安卓分区大小,合理值范围是0.11到0.7 / The reasonable range for Android partition size is 0.11 to 0.7
             #表示安卓分区占比大小,0.11标识占磁盘的15% / Indicates the proportion size of Android partitions, with a 0.11 mark representing 15% of the disk
             #其余空间自动分给windows / The remaining space is automatically allocated to Windows
@@ -130,60 +130,59 @@ function print_info(){
     fi
     
     print_hr
-    ui_print "= ${STR_RES[device]}:${package_info[device]}"
-    ui_print "= ${STR_RES[target_system]}:${package_info[target]}"
-    ui_print "= ${STR_RES[external_storage]}:${MY_EXTERNAL_STORAGE}"
-    ui_print "= ${STR_RES[system_brief]}:${package_info[brief]}"
+    prints str_device "${package_info[device]}"
+    prints str_target_system "${package_info[target]}"
+    prints str_external_storage "${MY_EXTERNAL_STORAGE}"
+    prints str_system_brief "${package_info[brief]}"
 
     if [ ${package_info[part]} -eq 1 ]
     then
         local is_size_legal=$(calc "${package_info[android]} >= 0.11 && ${package_info[android]} <= 0.7")
-        [ "${is_size_legal}" = "0" ] && err_exit "${STR_RES[and_011_to_07]}${package_info[android]}" 10
+        [ "${is_size_legal}" = "0" ] && err_exitf str_and_011_to_07 "${package_info[android]}"
 
-        local total_size=107.6
-        local android_size=$(calc "${total_size} * ${package_info[android]}")
-        local windows_size=$(calc "${total_size} - ${android_size} - 0.3")
-        ui_print "= ${STR_RES[partition]}:${STR_RES[android]}${android_size}GB,${STR_RES[windows]}${windows_size}GB"
+        local android_size=$(calc "100 * ${package_info[android]}")
+        local windows_size=$(calc "100 - ${android_size}")
+        prints str_partition_and_gb_win_gb "${android_size}" "${windows_size}"
     else
-        ui_print "= ${STR_RES[partition]}:${STR_RES[no_repartitionimg]}"
+        prints str_partition_no
     fi
-    ui_print "= Github:${BUILD_GITHUB}"
-    ui_print "= ${STR_RES[build_date]}:${BUILD_DATE}"
+    prints str_github "${BUILD_GITHUB}"
+    prints str_build_data2 "${BUILD_DATE}"
     print_hr
-    ui_print "= ${STR_RES[flashing_steps]}:1=${STR_RES[backup]}  2=${STR_RES[partition]}  3=${STR_RES[install]}  4=${STR_RES[bootleader]}"
+    prints str_flashing_steps
     print_hr
 }
 
 #检测当前环境是否满足刷机要求
 function env_check(){
     #检测是否在rec中
-    [ -r /init.rc ] && err_exit "${STR_RES[please_run_in_rec]}" 8
+    [ -r /init.rc ] && err_exitf str_please_run_in_rec
 
     #检测root
-    [ "$(${BUSYBOX} whoami)" != "root" ] && err_exit "${STR_RES[please_run_in_root]}" 4
+    [ "$(${BUSYBOX} whoami)" != "root" ] && err_exitf str_please_run_in_root
 
     #检测机型
-    [ "$(${TOOLBOX} getprop ro.product.device)" != ${BUILD_DEVICE} ] && err_exit "${STR_RES[cancel_flashing]},${STR_RES[device_is_not]}${BUILD_DEVICE}" 4
+    [ "$(${TOOLBOX} getprop ro.product.device)" != ${BUILD_DEVICE} ] && err_exitf str_cancel_device_is_not "${BUILD_DEVICE}"
 
     #检测脚本文件
     for path in "${asset_path[@]}"
     do
-        [ -x ${BASE_PATH}/${path} ] || err_exit "${BASE_PATH}/${path}${STR_RES[not_exist_or_permission_denied]}" 5
+        [ -x ${BASE_PATH}/${path} ] || err_exitf str_not_exist_or_permission_denied "${BASE_PATH}/${path}"
     done
 
     #当DEBUG=0才会去检测U盘中的系统镜像文件
     if [ $DEBUG -eq 0 ]
     then
     #检测系统镜像文件
-    [ -r ${SOURCES}/install.wim ] || err_exit "${STR_RES[cant_found_file]}${SOURCES}/install.wim" 404
+    [ -r ${SOURCES}/install.wim ] || err_exitf str_cant_found_file "${SOURCES}/install.wim"
 
     #检测系统包信息文件
-    [ -r ${IMAGES_PATH}/package.info ] || err_exit "${STR_RES[cant_found_file]}${IMAGES_PATH}/package.info" 404
+    [ -r ${IMAGES_PATH}/package.info ] || err_exitf str_cant_found_file "${SOURCES}/package.info"
     fi
 
     #检测电量
     local battery=$(${BUSYBOX} cat /sys/class/power_supply/battery/capacity)
-    [ $battery -lt 70 ] && err_exit "${STR_RES[please_charge_over_70]}" 6
+    [ $battery -lt 70 ] && err_exitf str_please_charge_over_70
 }
 
 #提取字符串中的浮点数
@@ -207,13 +206,13 @@ function wait2flash(){
     do
         ui_clear
         print_info
-        ui_print "= !!${timer}${STR_RES[seconds_before_start_flashing]}"
-        ui_print "= !!${STR_RES[to_cancel_volume_or_power_or_reboot]}"
+        prints str_seconds_before_start_flashing "${timer}"
+        prints str_to_cancel_volume_or_power_or_reboot
         print_hr
         local key_event=$(${BUSYBOX} timeout 1 ${BUSYBOX} cat /dev/input/event0)
         if [ "${key_event}" != "" ]
         then
-            ui_print "= ${STR_RES[user_cancel_flashing]}"
+            prints str_user_cancel_flashing
             print_hr
             exit 0
         fi
@@ -226,7 +225,7 @@ function wait2flash(){
 #参数2 对比的值
 function get_state_symbol(){
     [ $1 -eq $2 ] && echo "  <=="
-    [ $1 -gt $2 ] && echo "  ✓"
+    [ $1 -gt $2 ] && echo "  ok"
 }
 
 #打印当前进度
@@ -234,12 +233,19 @@ function get_state_symbol(){
 function print_progress(){
     ui_clear
     print_hr
-    ui_print "= ${STR_RES[instlling]} Windows"
+    if [ $1 = 5 ]
+    then
+        prints str_installation_completed
+    else
+        prints str_installing_windows
+    fi
+
     ui_print "="
-    ui_print "=   1.${STR_RES[backup]}  $(get_state_symbol ${1} 1)"
-    ui_print "=   2.${STR_RES[partition]}  $(get_state_symbol ${1} 2)"
-    ui_print "=   3.${STR_RES[install]}  $(get_state_symbol ${1} 3)"
-    ui_print "=   4.${STR_RES[bootleader]}  $(get_state_symbol ${1} 4)"
+
+    prints progress_backup "$(get_state_symbol ${1} 1)"
+    prints progress_partition "$(get_state_symbol ${1} 2)"
+    prints progress_install "$(get_state_symbol ${1} 3)"
+    prints progress_bootleader "$(get_state_symbol ${1} 4)"
     print_hr
 }
 
@@ -276,10 +282,10 @@ function main(){
 
     #完成
     print_progress 5
-    ui_print "${STR_RES[format_data_before_reboot]}"
-    ui_print "${STR_RES[no_password_next_boot_to_android]}"
-    ui_print "${STR_RES[restart_to_enter]}${package_info[target]}"
-    ui_print "${STR_RES[information_visit]}${BUILD_GITHUB}"
+    prints str_format_data_before_reboot
+    prints str_no_password_next_boot_to_android
+    prints str_restart_to_enter "${package_info[target]}"
+    prints str_information_visit "${BUILD_GITHUB}"
     print_hr
 }
 

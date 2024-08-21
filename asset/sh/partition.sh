@@ -80,37 +80,37 @@ function part_check(){
 
     #测试分区是不是连续的
     local nums_sort="$(my_sort " ${USERDATA_PART_NUM} ${ESP_PART_NUM} ${WIN_PART_NUM} ${GROW_PART_NUM}")"
-    [ "$(is_continuou "${nums_sort}")" = "0" ] && err_exit "${STR_RES[unexpected_situation]},${STR_RES[partition_discontinuity]},${STR_RES[cancel_flashing]}" 10
+    [ "$(is_continuou "${nums_sort}")" = "0" ] && err_exitf str_partition_discontinuity
 
     if [ ${package_info[part]} -eq 1 ]
     then
-        local part_extra_msg=",${STR_RES[about_to_delete]}"
+        local part_extra_msg="${STR_RES[str_about_to_delete]}"
     else
-        local part_extra_msg=",${STR_RES[remain_unchanged]}"
+        local part_extra_msg="${STR_RES[str_remain_unchanged]}"
     fi
 
     #打印现有分区信息
     #userdata分区
     if [ -n "${USERDATA_PART_NUM}" ]
     then
-        ui_print "${STR_RES[detected]}userdata${STR_RES[partition]},${STR_RES[size_is]}$(get_part_value userdata Size )${part_extra_msg}"
+        prints str_detected_partition_size_is userdata "$(get_part_value userdata Size)" "${part_extra_msg}"
     else
-        err_exit "${STR_RES[unexpected_situation]} ${STR_RES[cant_found]}userdata${STR_RES[partition]},${STR_RES[cancel_flashing]}" 10
+        err_exitf str_cant_found_partition userdata
     fi
     #win分区
     if [ -n "${WIN_PART_NUM}" ]
     then
-        ui_print "${STR_RES[detected]}win${STR_RES[partition]},${STR_RES[size_is]}$(get_part_value win Size )${part_extra_msg}"
+        prints str_detected_partition_size_is win "$(get_part_value win Size)" "${part_extra_msg}"
     fi
     #esp分区
     if [ -n "${ESP_PART_NUM}" ]
     then
-        ui_print "${STR_RES[detected]}esp${STR_RES[partition]},${STR_RES[size_is]}$(get_part_value esp Size )${part_extra_msg}"
+        prints str_detected_partition_size_is esp "$(get_part_value esp Size)" "${part_extra_msg}"
     fi
     #grow分区
     if [ -n "${GROW_PART_NUM}" ]
     then
-        ui_print "${STR_RES[detected]}grow${STR_RES[partition]},${STR_RES[size_is]}$(get_part_value grow Size )${part_extra_msg}"
+        prints str_detected_partition_size_is grow "$(get_part_value grow Size)" "${part_extra_msg}"
     fi
 }
 
@@ -124,7 +124,7 @@ function new_part_info(){
 
     if [ $(calc "${DISK_TOTAL_SIZE} < 100") = 1 ]
     then
-        err_exit "${STR_RES[msg_adjustable_partitions_less_than_100]}" 10
+        err_exitf str_msg_adjustable_partitions_less_than_100
     fi
 
     #分区的userdata信息
@@ -142,20 +142,21 @@ function new_part_info(){
     WIN_END=$DISK_MAX_SIZE
     WIN_SIZE=$(calc "${WIN_END} - ${WIN_START}")
 
-    ui_print "${STR_RES[min_starting_position_of_disk_is]}${DISK_MIN_SIZE}GB,${STR_RES[max_ending_position_of_disk_is]}${DISK_MAX_SIZE}GB"
-    ui_print "${STR_RES[the_adjustable_disk_space_is]}${DISK_TOTAL_SIZE}GB"
+    prints str_min_and_max_position_of_disk "${DISK_MIN_SIZE}" "${DISK_MAX_SIZE}"
+    prints str_the_adjustable_disk_space_is "${DISK_TOTAL_SIZE}"
 
     #android和win的空间大小占比
     ANDROID_USAGE=$(calc "${package_info[android]} * 100" )
     WINDOWS_USAGE=$(calc "100 - ${ANDROID_USAGE}" )
-    ui_print "${STR_RES[android_is_set_as_a_total_partition_of]}${ANDROID_USAGE}%,${STR_RES[windows_is_set_as_a_total_partition_of]}${WINDOWS_USAGE}%"
+    prints str_android_windows_as_a_total_partition_of "${ANDROID_USAGE}" "${WINDOWS_USAGE}"
     print_hr
-    ui_print "${STR_RES[msg_following_is_plan]}"
-    ui_print "1、userdata${STR_RES[starting_is]}${USERDATA_START},${STR_RES[ending_is]}${USERDATA_END}。 ${STR_RES[total]}${USERDATA_SIZE}GB"
-    ui_print "2、esp${STR_RES[starting_is]}${ESP_START},${STR_RES[ending_is]}${ESP_END}。 ${STR_RES[total]}0${ESP_SIZE}GB"
-    ui_print "3、win${STR_RES[starting_is]}${WIN_START},${STR_RES[ending_is]}${WIN_END}。 ${STR_RES[total]}${WIN_SIZE}GB"
-    ui_print "!!${STR_RES[confirm_it_20_sec]}"
-    ui_print "!!${STR_RES[to_cancel_volume_or_power_or_reboot]}"
+    prints str_msg_following_is_plan
+    prints str_partitions_starting_ending_total userdata "${USERDATA_START}" "${USERDATA_END}" "${USERDATA_SIZE}"
+    prints str_partitions_starting_ending_total esp "${ESP_START}" "${ESP_END}" "0${ESP_SIZE}"
+    prints str_partitions_starting_ending_total win "${WIN_START}" "${WIN_END}" "${WIN_SIZE}"
+
+    prints str_confirm_it_x_sec 20
+    prints str_to_cancel_volume_or_power_or_reboot
     print_hr
 
     local timer
@@ -170,15 +171,15 @@ function new_part_info(){
     do
         if [ "${i}" = "10" ]
         then
-            ui_print "!!${STR_RES[confirm_it_10_sec]}"
-            ui_print "!!${STR_RES[to_cancel_volume_or_power_or_reboot]}"
+            prints str_confirm_it_x_sec 10
+            prints str_to_cancel_volume_or_power_or_reboot
             print_hr
         fi
 
         local key_event=$(${BUSYBOX} timeout 1 ${BUSYBOX} cat /dev/input/event0)
         if [ "${key_event}" != "" ]
         then
-            ui_print "= ${STR_RES[user_cancel_flashing]}"
+            prints str_user_cancel_flashing
             print_hr
             exit 0
         fi
@@ -190,9 +191,9 @@ function new_part_info(){
 function del_part(){
     if [ -n "${1}" ]
     then
-        ui_print "${STR_RES[delete]}${1}${STR_RES[partition]}..."
+        prints str_delete_partition "${1}"
         ${BASE_PATH_BIN}/parted ${DISK_PATH} rm ${1}
-        [ $? -eq 0 ] || err_exit "${STR_RES[delete]}${1}${STR_RES[partition]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+        [ $? -eq 0 ] || err_exitf str_delete_partition_failed "${1}"
     fi
 }
 
@@ -202,14 +203,14 @@ function del_part(){
 #参数3 新建分区的起始
 #参数4 新建分区的结束
 function new_part(){
-    ui_print "${STR_RES[create]}${1}${STR_RES[partition]}..."
+    prints str_create_partition "${1}"
     ${BASE_PATH_BIN}/parted ${DISK_PATH} mkpart $1 $2 ${3}GB ${4}GB
-    [ $? -eq 0 ] || err_exit "${STR_RES[create]}${1}${STR_RES[partition]}${STR_RES[failed]},${STR_RES[cancel_flashing]}" 10
+    [ $? -eq 0 ] || err_exitf str_create_partition_failed "${1}"
 }
 
 #开始分区 
 function part_start(){
-    ui_print "${STR_RES[start_partition_do_not_power_off]}"
+    prints str_start_partition_do_not_power_off
     sleep 5s
     #删除分区
 
@@ -223,7 +224,7 @@ function part_start(){
     new_part userdata ext4 ${USERDATA_START} ${USERDATA_END}
     new_part esp fat32 ${ESP_START} ${ESP_END}
     new_part win ntfs ${WIN_START} ${WIN_END}
-    ui_print "${STR_RES[msg_partition_completed]}..."
+    prints str_msg_partition_completed
 }
 
 #程序流程开始
