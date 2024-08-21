@@ -73,19 +73,23 @@ function err_exit(){
 
 #从twrp配置中获取语言
 function load_languages(){
-    local lang_arr=($(${BUSYBOX} ls ${BASE_PATH_LANG} | ${BUSYBOX} awk -F. '{print $1}'))
-    local LOACL
-    for lang in ${lang_arr[@]}
-    do
-        ${BUSYBOX} cat ${TWRP_CONFIG_PATH} | ${BUSYBOX} grep -q "${lang}" && LOACL=${lang}
-    done
-    
-    #加载该语言
-    source "${BASE_PATH_LANG}/${LOACL}.sh"
+    if [ -r ${TWRP_CONFIG_PATH} ]
+    then
+        local lang_arr=($(${BUSYBOX} ls ${BASE_PATH_LANG} | ${BUSYBOX} awk -F. '{print $1}'))
+        local LOACL
+        for lang in ${lang_arr[@]}
+        do
+            ${BUSYBOX} cat ${TWRP_CONFIG_PATH} | ${BUSYBOX} grep -q "${lang}" && LOACL=${lang}
+        done
+        
+        #加载该语言
+        source "${BASE_PATH_LANG}/${LOACL}.sh"
 
-    #如果找不到语言，那就加载英文
-    [ -n "${LOACL}" ] || source "${BASE_PATH_LANG}/en.sh"
-
+        #如果找不到语言，那就加载英文
+        [ -n "${LOACL}" ] || source "${BASE_PATH_LANG}/en.sh"
+    else
+        source "${BASE_PATH_LANG}/en.sh"
+    fi
 }
 
 get_outfd
