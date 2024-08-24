@@ -9,6 +9,7 @@ fi
 
 backup_imgs=(
     "abl_a"
+    "xbl_a"
     "fsg"
     "fsc"
     "modemst1"
