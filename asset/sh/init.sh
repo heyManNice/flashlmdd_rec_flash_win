@@ -85,11 +85,16 @@ function load_languages(){
             ${BUSYBOX} cat ${TWRP_CONFIG_PATH} | ${BUSYBOX} grep -q "${lang}" && LOACL=${lang}
         done
         
-        #加载该语言
-        source "${BASE_PATH_LANG}/${LOACL}.sh"
+        if [ -n "${LOACL}" ]
+        then
+            #加载该语言
+            source "${BASE_PATH_LANG}/${LOACL}.sh"
+        else
+            #如果找不到语言，那就加载英文
+            source "${BASE_PATH_LANG}/en.sh"
+        fi
 
-        #如果找不到语言，那就加载英文
-        [ -n "${LOACL}" ] || source "${BASE_PATH_LANG}/en.sh"
+
     else
         source "${BASE_PATH_LANG}/en.sh"
     fi
