@@ -19,6 +19,7 @@ source ${BASE_PATH_SH}/init.sh
 external_storage_list=(
     "/usb-otg"
     "/external_sd"
+    "/usbstorage"
 )
 
 
