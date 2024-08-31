@@ -20,6 +20,7 @@ external_storage_list=(
     "/usb-otg"
     "/external_sd"
     "/usbstorage"
+    "/sdcard1"
 )
 
 
