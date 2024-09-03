@@ -1,52 +1,53 @@
 # flashlmdd_rec_flash_win
-LGv50刷windows双系统的卡刷包脚本代码，可以自定义配置安卓和win的磁盘空间  
+## Choose your language
+English | [`中文简体`](./README-zh-CN.md)
+## brief
+Script code for flashing Windows dual-system on LG V50, allowing customization of disk space for Android and Windows.  
 
-其他机型仓库：  
+Other device repositories:  
 - [flashlmdd(lgv50)](https://github.com/heyManNice/flashlmdd_rec_flash_win)  
 - [mh2lm5g(lgv50s)](https://github.com/heyManNice/mh2lm5g_rec_flash_win)  
   
-为了降低测试成本，脚本应当专机专用  
-适配新机型请建立新的Fork  
+To reduce testing costs, the script should be device-specific. For new devices, please create a new Fork.  
 
-## 过程图
+## Process Diagram
 ![过程图片](./pic/process.jpg)
 
-## 如何刷机
-这个脚本目前还在测试阶段  
-如果你担心你的lgv50手机损坏先不要刷这个包  
-刷机可能会出现意外失败，刷机变砖概不负责  
-请确保你有救砖能力再刷这个包
-### 准备工作
-- 硬件：lgv50手机、otg连接线、8G以上大小U盘
-- 软件：flashlmdd_rec_flash_win压缩包
-- 手机状态：可以进入第三方rec
-### 操作
-- 格式化U盘(SD卡)：把U盘(或者SD卡)格式化为exFAT格式，如果已经是这个格式的话可以不用操作
-- 复制刷机包：把刷机包中解压出来的的flashlmdd_rec_flash_win文件夹直接放在U盘的根目录
-- 配置刷机包：打开flashlmdd_rec_flash_win文件夹,会看到package.info，用记事本打开它
-	          里面可以设置是否要分区和安卓与windows的分区大小
-	          手机如果是第一次安装windows的话，分区功能必须要打开
-- 安装twrp(可选)：推荐使用的rec为v50-twrp-installer-v3.6.0-flashlmdd_ab-by_youngguo(已放入压缩包中)，它是开发过程中测试的环境，兼容性比较好
-- 连接U盘(SD卡)：在twrp中把U盘(SD卡)插入手机，用挂载功能把外置U盘挂载上
-- 安装Windows：找到/usb-otg/flashlmdd_rec_flash_win/install.zip
-	 	像平常刷机一样把它给刷上就好了
-## 至开发者
-刷机包的结构为：  
+## How to Flash
+This script is currently in the testing phase.  
+If you are worried about damaging your LG V50, do not flash this package yet. Flashing may fail unexpectedly, and we are not responsible for bricking your device.  
+Please ensure you have the ability to unbrick your device before flashing this package.
+### Preparation
+- Hardware: LG V50 phone, OTG cable, USB drive with at least 8GB capacity
+- Software: flashlmdd_rec_flash_win compressed package
+- Phone status: Able to enter third-party recovery
+### Steps
+- Format USB Drive (SD Card): Format the USB drive (or SD card) to exFAT. If it is already in this format, you can skip this step.
+- Copy Flash Package: Extract the flashlmdd_rec_flash_win folder from the compressed package and place it in the root directory of the USB drive.
+- Configure Flash Package: Open the flashlmdd_rec_flash_win folder and find package.info. Open it with a text editor.
+              Here, you can set whether to partition and the partition sizes for Android and Windows.
+              If this is the first time installing Windows on your phone, the partition function must be enabled.
+- Install TWRP (Optional): The recommended recovery is v50-twrp-installer-v3.6.0-flashlmdd_ab-by_youngguo (included in the compressed package). It was tested during development and has good compatibility.
+- Connect USB Drive (SD Card): In TWRP, insert the USB drive (SD card) into the phone and use the mount function to mount the external USB drive.
+- Install Windows: Locate /usb-otg/flashlmdd_rec_flash_win/install.zip and flash it like a regular ROM.
+
+## For Developers
+The structure of the flash package is as follows:  
 flashlmdd_rec_flash_win  
-&emsp;&emsp;backups //刷机时备份分区的目录  
-&emsp;&emsp;sources //windows资源文件夹   
-&emsp;&emsp;&emsp;&emsp;install.wim //windows资源文件夹  
-&emsp;&emsp;&emsp;&emsp;uefi.img  //uefi文件  
-&emsp;&emsp;install.zip  //刷机脚本文件  
-&emsp;&emsp;package.info //刷机包信息和配置文件  
+&emsp;&emsp;backups //Directory for partition backups during flashing  
+&emsp;&emsp;sources //Windows resource folder   
+&emsp;&emsp;&emsp;&emsp;install.wim //Windows resource file  
+&emsp;&emsp;&emsp;&emsp;uefi.img  //UEFI file  
+&emsp;&emsp;install.zip  //Flash script file  
+&emsp;&emsp;package.info //Flash package information and configuration file  
 
-通过替换install.wim可以实现安装任意版本的windows系统
+By replacing install.wim, you can install any version of Windows.
 
-使用`.\build.bat release` 在./package_example下生成install.zip文件  
-使用`.\build.bat dev` 在./build下生成test.zip文件，并通过adb推送到手机的/tmp  
+Use`.\build.bat release` to generate the install.zip file in ./package_example.  
+Use`.\build.bat dev` to generate the test.zip file in ./build and push it to the phone’s /tmp via adb.  
 
-## 相关资源
-二进制程序：
+## Related Resources
+Binary Programs:  
 [bash](https://www.gnu.org/software/bash/bash.html) 
 [busybox](https://github.com/meefik/busybox)
 [toolbox](/system/bin)
@@ -60,15 +61,15 @@ flashlmdd_rec_flash_win
 [7z](https://www.7-zip.org/)
 [adb](https://source.android.google.cn/docs/setup/build/adb?hl=zh-cn)
 
-参考教程：
+Reference Tutorials:
 [woa-flashlmdd](https://github.com/n00b69/woa-flashlmdd/tree/main)
 [windows-flashable-script](https://github.com/edk2-porting/windows-flashable-script)
 
-woa相关资源：
+WOA Related Resources:
 [msmnilePkg](https://github.com/woa-msmnile/msmnilePkg)
 [msmnile-Drivers](https://github.com/woa-msmnile/msmnile-Drivers)
 
-系统镜像：
+System Images:
 - [Luo]Windows 10 Pro Arm64 21390.2050.wim  
 
 twrp：
