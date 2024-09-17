@@ -64,11 +64,6 @@ function win2unix(){
 }
 
 
-#打印编译信息
-function get_build_info(){
-    prints str_build_data "$BUILD_DATE"
-}
-
 #升序排序
 #参数1 需要排的字符串，空格间隔
 function my_sort(){
@@ -256,7 +251,6 @@ function print_progress(){
 function main(){
     
     win2unix
-    get_build_info
     env_check
     wait2flash
 
